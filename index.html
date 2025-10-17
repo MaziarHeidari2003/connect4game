@@ -108,7 +108,7 @@
   </div>
 
   <script>
-    const BASE_URL = "https://maziar-temp-project.ir/api/v1"; // Change if hosted elsewhere
+    const BASE_URL = "https://maziar-temp-project.ir/connect4/api/v1"; // Change if hosted elsewhere
     let token = "";
     let nickname = "";
     let email = "";
@@ -185,7 +185,7 @@
     }
 
     async function createGame() {
-      const res = await fetch(`https://maziar-temp-project.ir/api/v1/game/`, {
+      const res = await fetch(`https://maziar-temp-project.ir/connect4/api/v1/game/`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -201,7 +201,7 @@
     }
 
     async function loadGames() {
-      const res = await fetch(`https://maziar-temp-project.ir/api/v1/game/`, {
+      const res = await fetch(`https://maziar-temp-project.ir/connect4/api/v1/game/`, {
         method: "GET",
         mode: "cors",
         headers: { 
@@ -226,7 +226,7 @@
       const game_uuid = document.getElementById("gameList").value;
       if (!game_uuid) return alert("Please select a game first");
 
-      const res = await fetch(`https://maziar-temp-project.ir/api/v1/game/join?game_uuid=${game_uuid.trim().replace(/"/g, "")}`, {
+      const res = await fetch(`https://maziar-temp-project.ir/connect4/api/v1/game/join?game_uuid=${game_uuid.trim().replace(/"/g, "")}`, {
         method: "PATCH",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -248,7 +248,7 @@
     async function updateBoard() {
       if (!currentGameUUID) return;
 
-      const res = await fetch(`https://maziar-temp-project.ir/api/v1/game/current?game_uuid=${currentGameUUID.trim().replace(/"/g, "")}`, {
+      const res = await fetch(`https://maziar-temp-project.ir/connect4/api/v1/game/current?game_uuid=${currentGameUUID.trim().replace(/"/g, "")}`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
 
@@ -300,7 +300,7 @@
     async function makeMove(column) {
       if (!currentGameUUID) return;
 
-      const res = await fetch(`https://maziar-temp-project.ir/api/v1/game/make-move?game_uuid=${currentGameUUID.trim().replace(/"/g, "")}&chosen_column=${column}`, {
+      const res = await fetch(`https://maziar-temp-project.ir/connect4/api/v1/game/make-move?game_uuid=${currentGameUUID.trim().replace(/"/g, "")}&chosen_column=${column}`, {
         method: "PATCH",
         headers: { "Authorization": `Bearer ${token}` }
       });
