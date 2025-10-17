@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Connect 4</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 400px;
+      margin-bottom: 20px;
+    }
+
+    input, button, select {
+      margin: 5px 0;
+      padding: 10px;
+      width: 100%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      cursor: pointer;
+      background: #3498db;
+      color: white;
+      border: none;
+    }
+
+    button:hover {
+      background: #2980b9;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(7, 60px);
+      grid-template-rows: repeat(6, 60px);
+      gap: 5px;
+      margin-top: 20px;
+    }
+
+    .cell {
+      width: 60px;
+      height: 60px;
+      background: #e0e0e0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    .player1 { background: red; }
+    .player2 { background: yellow; }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <h1>Connect 4</h1>
+
+  <!-- Register -->
+  <div class="container" id="registerDiv">
+    <h3>Register</h3>
+    <input type="email" id="regEmail" placeholder="Email">
+    <input type="text" id="regNick" placeholder="Nickname">
+    <button onclick="register()">Register</button>
+  </div>
+
+  <!-- Login -->
+  <div class="container" id="loginDiv">
+    <h3>Login</h3>
+    <input type="email" id="loginEmail" placeholder="Email">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <!-- Game Controls -->
+  <div class="container hidden" id="gameControls">
+    <h3>Game Menu</h3>
+    <p id="welcomeText"></p>
+    <button onclick="createGame()">Create New Game</button>
+    <button onclick="loadGames()">Load Available Games</button>
+    <select id="gameList"></select>
+    <button onclick="joinGame()">Join Game</button>
+  </div>
+
+  <!-- Game Board -->
+  <div class="container hidden" id="gameArea">
+    <h3>Game Board</h3>
+    <p id="statusText">Waiting for game state...</p>
+    <div id="board"></div>
+  </div>
+
+  <script>
+    const BASE_URL = "https://maziar-temp-project.ir/api/v1"; // Change if hosted elsewhere
+    let token = "";
+    let nickname = "";
+    let email = "";
+    let currentGameUUID = "";
+
+    // Check localStorage for token
+    window.onload = () => {
+      const saved = JSON.parse(localStorage.getItem("userAuth"));
+      if (saved && saved.token) {
+        token = saved.token;
+        nickname = saved.nick_name;
+        email = saved.email;
+        showGameMenu();
+      }
+    };
+
+    async function register() {
+      const email = document.getElementById("regEmail").value.trim();
+      const nick = document.getElementById("regNick").value.trim();
+      if (!email || !nick) return alert("Please fill in both fields");
+
+      const res = await fetch(`${BASE_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, nick_name: nick })
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        return alert("Registration failed: " + err);
+      }
+
+      const data = await res.json();
+      saveAuthData(data);
+      alert("Registered successfully! Welcome " + data.nick_name);
+      showGameMenu();
+    }
+
+    async function login() {
+      const email = document.getElementById("loginEmail").value.trim();
+      if (!email) return alert("Please enter your email");
+
+      const res = await fetch(`${BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        return alert("Login failed: " + err);
+      }
+
+      const data = await res.json();
+      saveAuthData(data);
+      alert("Login successful! Welcome " + data.nick_name);
+      showGameMenu();
+    }
+
+    function saveAuthData(data) {
+      token = data.access_token;
+      nickname = data.nick_name;
+      email = data.email;
+      localStorage.setItem("userAuth", JSON.stringify({
+        token, nick_name: nickname, email
+      }));
+    }
+
+    function showGameMenu() {
+      document.getElementById("registerDiv").classList.add("hidden");
+      document.getElementById("loginDiv").classList.add("hidden");
+      document.getElementById("gameControls").classList.remove("hidden");
+      document.getElementById("welcomeText").textContent = `Logged in as: ${nickname}`;
+    }
+
+    async function createGame() {
+      const res = await fetch(`https://maziar-temp-project.ir/api/v1/game/`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        return alert("Failed to create game: " + err);
+      }
+
+      currentGameUUID = await res.text();
+      alert("Game created: " + currentGameUUID);
+      startGame();
+    }
+
+    async function loadGames() {
+      const res = await fetch(`https://maziar-temp-project.ir/api/v1/game/`, {
+        method: "GET",
+        mode: "cors",
+        headers: { 
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) return alert("Failed to load games");
+
+      const games = await res.json();
+      const list = document.getElementById("gameList");
+      list.innerHTML = "";
+      games.forEach(g => {
+        const opt = document.createElement("option");
+        opt.value = g.uuid;
+        opt.textContent = `${g.player_1_nick} (${g.status})`;
+        list.appendChild(opt);
+      });
+    }
+
+    async function joinGame() {
+      const game_uuid = document.getElementById("gameList").value;
+      if (!game_uuid) return alert("Please select a game first");
+
+      const res = await fetch(`https://maziar-temp-project.ir/api/v1/game/join?game_uuid=${game_uuid.trim().replace(/"/g, "")}`, {
+        method: "PATCH",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (!res.ok) return alert("Failed to join game");
+
+      currentGameUUID = game_uuid;
+      alert("Joined game successfully!");
+      startGame();
+    }
+
+    function startGame() {
+      document.getElementById("gameControls").classList.add("hidden");
+      document.getElementById("gameArea").classList.remove("hidden");
+      updateBoard();
+      setInterval(updateBoard, 3000);
+    }
+
+    async function updateBoard() {
+      if (!currentGameUUID) return;
+
+      const res = await fetch(`https://maziar-temp-project.ir/api/v1/game/current?game_uuid=${currentGameUUID.trim().replace(/"/g, "")}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+
+      // <<< Add this line to log the board
+  console.log("Board data from backend:", data.board);
+
+      renderBoard(data.board);
+      document.getElementById("statusText").textContent =
+        `Turn: ${data.current_turn_nick} | Status: ${data.status}` +
+        (data.winner ? ` | Winner: ${data.winner}` : "");
+    }
+
+ function renderBoard(boardArray) {
+  const boardDiv = document.getElementById("board");
+  boardDiv.innerHTML = "";
+
+  if (!Array.isArray(boardArray)) return;
+
+  const rows = 6;
+  const cols = 7;
+
+  // boardArray is column-major: boardArray[col][row]
+  // We iterate rows from bottom (rows - 1) to top (0)
+  for (let r = rows - 1; r >= 0; r--) {
+    for (let c = 0; c < cols; c++) {
+      const cell = document.createElement("div");
+      cell.classList.add("cell");
+
+      const column = boardArray[c];
+      const value = column ? column[r] : 0;
+
+      if (value === 1 || value === "1") cell.classList.add("player1");
+      if (value === 2 || value === "2") cell.classList.add("player2");
+
+      cell.onclick = () => makeMove(c);
+      boardDiv.appendChild(cell);
+    }
+  }
+}
+
+    
+
+
+
+    async function makeMove(column) {
+      if (!currentGameUUID) return;
+
+      const res = await fetch(`https://maziar-temp-project.ir/api/v1/game/make-move?game_uuid=${currentGameUUID.trim().replace(/"/g, "")}&chosen_column=${column}`, {
+        method: "PATCH",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (!res.ok) return alert("Move failed");
+
+      const result = await res.text();
+      if (result.toLowerCase().includes("true")) {
+        updateBoard();
+      } else {
+        alert("Invalid move or not your turn");
+      }
+    }
+  </script>
+</body>
+</html>
