@@ -12,10 +12,18 @@
       align-items: center;
       padding: 30px;
     }
+ #reviewBoard {
+  display: grid;
+  grid-template-columns: repeat(7, 60px); /* 7 columns like Connect 4 */
+  grid-template-rows: repeat(6, 60px);    /* 6 rows */
+  gap: 5px;
+  justify-content: center;
+  margin: 20px auto;
+}
 
-    h1 {
-      color: #333;
-    }
+
+
+    h1 { color: #333; }
 
     .container {
       background: white;
@@ -41,9 +49,7 @@
       border: none;
     }
 
-    button:hover {
-      background: #2980b9;
-    }
+    button:hover { background: #2980b9; }
 
     #board {
       display: grid;
@@ -98,6 +104,11 @@
     <button onclick="loadGames()">Load Available Games</button>
     <select id="gameList"></select>
     <button onclick="joinGame()">Join Game</button>
+    <hr>
+    <!-- --- NEW --- -->
+    <button onclick="loadFinishedGames()">Review Finished Games</button>
+    <select id="finishedGameList" class="hidden"></select>
+    <button id="reviewBtn" class="hidden" onclick="reviewSelectedGame()">Review Selected Game</button>
   </div>
 
   <!-- Game Board -->
@@ -107,14 +118,29 @@
     <div id="board"></div>
   </div>
 
+  <!-- --- NEW --- Review Panel --- -->
+  <div class="container hidden" id="reviewArea">
+    <h3>Review Game</h3>
+    <p id="reviewStatus">Game step: <span id="currentStep">0</span></p>
+    <div id="reviewBoard"></div>
+    <input type="number" id="stepInput" min="1" max="42" placeholder="Enter step (1-42)">
+    <button onclick="goToStep()">Go To Step</button>
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+      <button onclick="prevStep()">Previous Step</button>
+      <button onclick="nextStep()">Next Step</button>
+    </div>
+  </div>
+
   <script>
-    const BASE_URL = "https://maziar-temp-project.ir/connect4/api/v1"; // Change if hosted elsewhere
+    const BASE_URL = "https://maziar-temp-project.ir/connect4/api/v1";
     let token = "";
     let nickname = "";
     let email = "";
     let currentGameUUID = "";
+    // --- NEW ---
+    let reviewGameUUID = "";
+    let currentReviewStep = 0;
 
-    // Check localStorage for token
     window.onload = () => {
       const saved = JSON.parse(localStorage.getItem("userAuth"));
       if (saved && saved.token) {
@@ -172,9 +198,7 @@
       token = data.access_token;
       nickname = data.nick_name;
       email = data.email;
-      localStorage.setItem("userAuth", JSON.stringify({
-        token, nick_name: nickname, email
-      }));
+      localStorage.setItem("userAuth", JSON.stringify({ token, nick_name: nickname, email }));
     }
 
     function showGameMenu() {
@@ -185,15 +209,11 @@
     }
 
     async function createGame() {
-      const res = await fetch(`https://maziar-temp-project.ir/connect4/api/v1/game/`, {
+      const res = await fetch(`${BASE_URL}/game/`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });
-
-      if (!res.ok) {
-        const err = await res.text();
-        return alert("Failed to create game: " + err);
-      }
+      if (!res.ok) return alert("Failed to create game");
 
       currentGameUUID = await res.text();
       alert("Game created: " + currentGameUUID);
@@ -201,14 +221,9 @@
     }
 
     async function loadGames() {
-      const res = await fetch(`https://maziar-temp-project.ir/connect4/api/v1/game/`, {
-        method: "GET",
-        mode: "cors",
-        headers: { 
-          "Authorization": `Bearer ${token}`
-        }
+      const res = await fetch(`${BASE_URL}/game/`, {
+        headers: { "Authorization": `Bearer ${token}` }
       });
-
       if (!res.ok) return alert("Failed to load games");
 
       const games = await res.json();
@@ -226,11 +241,10 @@
       const game_uuid = document.getElementById("gameList").value;
       if (!game_uuid) return alert("Please select a game first");
 
-      const res = await fetch(`https://maziar-temp-project.ir/connect4/api/v1/game/join?game_uuid=${game_uuid.trim().replace(/"/g, "")}`, {
+      const res = await fetch(`${BASE_URL}/game/join?game_uuid=${game_uuid}`, {
         method: "PATCH",
         headers: { "Authorization": `Bearer ${token}` }
       });
-
       if (!res.ok) return alert("Failed to join game");
 
       currentGameUUID = game_uuid;
@@ -247,72 +261,106 @@
 
     async function updateBoard() {
       if (!currentGameUUID) return;
-
-      const res = await fetch(`https://maziar-temp-project.ir/connect4/api/v1/game/current?game_uuid=${currentGameUUID.trim().replace(/"/g, "")}`, {
+      const res = await fetch(`${BASE_URL}/game/current?game_uuid=${currentGameUUID}`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
-
       if (!res.ok) return;
-
       const data = await res.json();
-
-      // <<< Add this line to log the board
-  console.log("Board data from backend:", data.board);
-
-      renderBoard(data.board);
+      renderBoard(data.board, "board");
       document.getElementById("statusText").textContent =
         `Turn: ${data.current_turn_nick} | Status: ${data.status}` +
         (data.winner ? ` | Winner: ${data.winner}` : "");
     }
 
- function renderBoard(boardArray) {
-  const boardDiv = document.getElementById("board");
-  boardDiv.innerHTML = "";
+    function renderBoard(boardArray, elementId) {
+      const boardDiv = document.getElementById(elementId);
+      boardDiv.innerHTML = "";
+      if (!Array.isArray(boardArray)) return;
 
-  if (!Array.isArray(boardArray)) return;
-
-  const rows = 6;
-  const cols = 7;
-
-  // boardArray is column-major: boardArray[col][row]
-  // We iterate rows from bottom (rows - 1) to top (0)
-  for (let r = rows - 1; r >= 0; r--) {
-    for (let c = 0; c < cols; c++) {
-      const cell = document.createElement("div");
-      cell.classList.add("cell");
-
-      const column = boardArray[c];
-      const value = column ? column[r] : 0;
-
-      if (value === 1 || value === "1") cell.classList.add("player1");
-      if (value === 2 || value === "2") cell.classList.add("player2");
-
-      cell.onclick = () => makeMove(c);
-      boardDiv.appendChild(cell);
+      const rows = 6, cols = 7;
+      for (let r = rows - 1; r >= 0; r--) {
+        for (let c = 0; c < cols; c++) {
+          const cell = document.createElement("div");
+          cell.classList.add("cell");
+          const column = boardArray[c];
+          const value = column ? column[r] : 0;
+          if (value === 1 || value === "1") cell.classList.add("player1");
+          if (value === 2 || value === "2") cell.classList.add("player2");
+          if (elementId === "board") cell.onclick = () => makeMove(c);
+          boardDiv.appendChild(cell);
+        }
+      }
     }
-  }
-}
-
-    
-
-
 
     async function makeMove(column) {
       if (!currentGameUUID) return;
-
-      const res = await fetch(`https://maziar-temp-project.ir/connect4/api/v1/game/make-move?game_uuid=${currentGameUUID.trim().replace(/"/g, "")}&chosen_column=${column}`, {
+      const res = await fetch(`${BASE_URL}/game/make-move?game_uuid=${currentGameUUID}&chosen_column=${column}`, {
         method: "PATCH",
         headers: { "Authorization": `Bearer ${token}` }
       });
-
       if (!res.ok) return alert("Move failed");
-
       const result = await res.text();
-      if (result.toLowerCase().includes("true")) {
-        updateBoard();
-      } else {
-        alert("Invalid move or not your turn");
-      }
+      if (result.toLowerCase().includes("true")) updateBoard();
+      else alert("Invalid move or not your turn");
+    }
+
+    // --- NEW --- Load finished games
+    async function loadFinishedGames() {
+      const res = await fetch(`${BASE_URL}/game/?game_status=FINISHED`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (!res.ok) return alert("Failed to load finished games");
+
+      const games = await res.json();
+      const list = document.getElementById("finishedGameList");
+      list.classList.remove("hidden");
+      list.innerHTML = "";
+      games.forEach(g => {
+        const opt = document.createElement("option");
+        opt.value = g.uuid;
+        opt.textContent = `${g.player_1_nick} vs ${g.player_2_nick}`;
+        list.appendChild(opt);
+      });
+      document.getElementById("reviewBtn").classList.remove("hidden");
+    }
+
+    async function reviewSelectedGame() {
+      const uuid = document.getElementById("finishedGameList").value;
+      if (!uuid) return alert("Select a finished game first");
+      reviewGameUUID = uuid;
+      document.getElementById("gameControls").classList.add("hidden");
+      document.getElementById("reviewArea").classList.remove("hidden");
+      await loadGameStep();
+    }
+
+    async function loadGameStep(step = null) {
+      let url = `${BASE_URL}/game/review_game?game_uuid=${reviewGameUUID}`;
+      if (step) url += `&game_step=${step}`;
+      const res = await fetch(url, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (!res.ok) return alert("Failed to fetch step");
+      const data = await res.json();
+      currentReviewStep = data.step;
+      renderBoard(data.board_status, "reviewBoard");
+      console.log( renderBoard(data.board_status, "reviewBoard"))
+      document.getElementById("currentStep").textContent = currentReviewStep;
+    }
+
+    async function goToStep() {
+      const step = parseInt(document.getElementById("stepInput").value);
+      if (!step || step < 1 || step > 42) return alert("Enter a valid step (1–42)");
+      await loadGameStep(step);
+    }
+
+    async function nextStep() {
+      if (currentReviewStep >= 42) return;
+      await loadGameStep(currentReviewStep + 1);
+    }
+
+    async function prevStep() {
+      if (currentReviewStep <= 1) return;
+      await loadGameStep(currentReviewStep - 1);
     }
   </script>
 </body>
