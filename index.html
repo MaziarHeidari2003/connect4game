@@ -256,7 +256,7 @@
       document.getElementById("gameControls").classList.add("hidden");
       document.getElementById("gameArea").classList.remove("hidden");
       updateBoard();
-      setInterval(updateBoard, 3000);
+      setInterval(updateBoard, 1000);
     }
 
     async function updateBoard() {
@@ -355,11 +355,15 @@
 
     async function nextStep() {
       if (currentReviewStep >= 42) return;
+      document.getElementById("stepInput").value = ""; // ✅ clear
+
       await loadGameStep(currentReviewStep + 1);
     }
 
     async function prevStep() {
       if (currentReviewStep <= 1) return;
+      document.getElementById("stepInput").value = ""; // ✅ clear
+
       await loadGameStep(currentReviewStep - 1);
     }
   </script>
