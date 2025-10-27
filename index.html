@@ -114,6 +114,7 @@
   <!-- Game Board -->
   <div class="container hidden" id="gameArea">
     <h3>Game Board</h3>
+    <button onclick="returnToMainMenu()">Return to Main Menu</button>
     <p id="statusText">Waiting for game state...</p>
     <div id="board"></div>
   </div>
@@ -121,6 +122,8 @@
   <!-- --- NEW --- Review Panel --- -->
   <div class="container hidden" id="reviewArea">
     <h3>Review Game</h3>
+    <button onclick="returnToMainMenu()">Return to Main Menu</button>
+
     <p id="reviewStatus">Game step: <span id="currentStep">0</span></p>
     <div id="reviewBoard"></div>
     <input type="number" id="stepInput" min="1" max="42" placeholder="Enter step (1-42)">
@@ -150,6 +153,23 @@
         showGameMenu();
       }
     };
+
+    function returnToMainMenu() {
+  document.getElementById("gameArea").classList.add("hidden");
+  document.getElementById("reviewArea").classList.add("hidden");
+  document.getElementById("gameControls").classList.remove("hidden");
+
+  // Optional: stop any auto-refreshing game updates
+  // if you used setInterval for updateBoard:
+  if (typeof gameInterval !== "undefined") {
+    clearInterval(gameInterval);
+  }
+
+  // Reset review/game state if needed
+  currentGameUUID = "";
+  reviewGameUUID = "";
+}
+
 
     async function register() {
       const email = document.getElementById("regEmail").value.trim();
