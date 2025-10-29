@@ -271,13 +271,42 @@
       alert("Joined game successfully!");
       startGame();
     }
+let socket;
 
-    function startGame() {
-      document.getElementById("gameControls").classList.add("hidden");
-      document.getElementById("gameArea").classList.remove("hidden");
-      updateBoard();
-      setInterval(updateBoard, 1000);
-    }
+function startGame() {
+  document.getElementById("gameControls").classList.add("hidden");
+  document.getElementById("gameArea").classList.remove("hidden");
+  connectWebSocket();
+  updateBoard(); // Initial load
+
+}
+
+function connectWebSocket() {
+  if (!currentGameUUID) return;
+
+  socket = new WebSocket(`wss://maziar-temp-project.ir/connect4/api/v1/ws/${currentGameUUID}`);
+
+  socket.onopen = () => console.log("✅ WebSocket connected");
+  setInterval(() => {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send("ping");
+      }
+    }, 25000);
+  };
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    renderBoard(data.board, "board");
+    document.getElementById("statusText").textContent =
+      `Turn: ${data.current_turn} | Status: ${data.status}` +
+      (data.winner ? ` | Winner: ${data.winner}` : "");
+  };
+
+  socket.onclose = () => {
+    console.log("❌ WebSocket closed, retrying in 3s...");
+    setTimeout(connectWebSocket, 3000);
+  };
+}
+
 
     async function updateBoard() {
       if (!currentGameUUID) return;
