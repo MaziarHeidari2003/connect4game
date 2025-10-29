@@ -278,7 +278,6 @@ function startGame() {
   document.getElementById("gameArea").classList.remove("hidden");
   connectWebSocket();
   updateBoard(); // Initial load
-
 }
 
 function connectWebSocket() {
@@ -286,13 +285,14 @@ function connectWebSocket() {
 
   socket = new WebSocket(`wss://maziar-temp-project.ir/connect4/api/v1/ws/${currentGameUUID}`);
 
-  socket.onopen = () => console.log("✅ WebSocket connected");
-  setInterval(() => {
+    setInterval(() => {
       if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send("ping");
       }
     }, 25000);
-  };
+  
+  socket.onopen = () => console.log("✅ WebSocket connected");
+
   socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
     renderBoard(data.board, "board");
