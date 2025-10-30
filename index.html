@@ -284,6 +284,7 @@ function connectWebSocket() {
   if (!currentGameUUID) return;
 
     currentGameUUID = currentGameUUID.replaceAll('"', '');
+console.log(`Connecting to: wss://maziar-temp-project.ir/ws/${gameUUID}`);
 
 socket = new WebSocket(`wss://maziar-temp-project.ir/ws/game/${currentGameUUID}`);
 
