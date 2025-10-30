@@ -283,6 +283,8 @@ function startGame() {
 function connectWebSocket() {
   if (!currentGameUUID) return;
 
+    currentGameUUID = currentGameUUID.replaceAll('"', '');
+
   socket = new WebSocket(`wss://maziar-temp-project.ir/connect4/api/v1/game/ws/${currentGameUUID}`);
 
     setInterval(() => {
