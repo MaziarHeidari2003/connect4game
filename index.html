@@ -285,7 +285,7 @@ function connectWebSocket() {
 
     currentGameUUID = currentGameUUID.replaceAll('"', '');
 
-socket = new WebSocket(`wss://maziar-temp-project.ir/connect4/game/ws/${currentGameUUID}`);
+socket = new WebSocket(`wss://maziar-temp-project.ir/connect4/api/v1/game/ws/${currentGameUUID}`);
 
     setInterval(() => {
       if (socket && socket.readyState === WebSocket.OPEN) {
