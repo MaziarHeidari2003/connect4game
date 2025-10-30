@@ -350,9 +350,11 @@ socket = new WebSocket(`wss://maziar-temp-project.ir/connect4/ws/api/v1/game/${c
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (!res.ok) return alert("Move failed");
-      const result = await res.text();
-      if (result.toLowerCase().includes("true")) updateBoard();
-      else alert("Invalid move or not your turn");
+    const result = await res.text();
+if (!result.toLowerCase().includes("true")) {
+  alert("Invalid move or not your turn");
+}
+
     }
 
     // --- NEW --- Load finished games
