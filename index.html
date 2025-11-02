@@ -104,6 +104,8 @@
     <button onclick="loadGames()">Load Available Games</button>
     <select id="gameList"></select>
     <button onclick="joinGame()">Join Game</button>
+    <button onclick="connectToActiveGame()">Watch Your Code Game</button>
+
     <hr>
     <!-- --- NEW --- -->
     <button onclick="loadFinishedGames()">Review Finished Games</button>
@@ -386,6 +388,33 @@ if (!result.toLowerCase().includes("true")) {
       document.getElementById("reviewArea").classList.remove("hidden");
       await loadGameStep();
     }
+
+    async function connectToActiveGame() {
+  try {
+    const res = await fetch(`${BASE_URL}/game/current_player_active_game`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+
+    if (!res.ok) {
+      alert("Failed to fetch active game");
+      return;
+    }
+
+    const activeGameUUID = await res.text(); // or .json() depending on your backend
+    if (!activeGameUUID || activeGameUUID === "null") {
+      alert("You have no active game!");
+      return;
+    }
+
+    currentGameUUID = activeGameUUID.replaceAll('"', '');
+    alert("Connecting to your active game...");
+    startGame(); // will call connectWebSocket() and updateBoard()
+  } catch (err) {
+    console.error(err);
+    alert("Error connecting to active game");
+  }
+}
+
 
     async function loadGameStep(step = null) {
       let url = `${BASE_URL}/game/review_game?game_uuid=${reviewGameUUID}`;
