@@ -211,8 +211,8 @@ async function returnToMainMenu() {
       }
 
       const data = await res.json();
-      saveAuthData(data);
-      alert("Registered successfully! Welcome " + data.nick_name);
+      saveAuthData(data.user);
+      alert("Registered successfully! Welcome " + data.user.nick_name);
       showGameMenu();
     }
 
@@ -232,17 +232,19 @@ async function returnToMainMenu() {
       }
 
       const data = await res.json();
-      saveAuthData(data);
-      alert("Login successful! Welcome " + data.nick_name);
+      saveAuthData(data.user);
+      alert("Login successful! Welcome " + data.user.nick_name);
       showGameMenu();
     }
 
     function saveAuthData(data) {
-      token = data.access_token;
-      nickname = data.nick_name;
-      email = data.email;
+      token = data.user.access_token;
+      nickname = data.user.nick_name;
+      email = data.user.email;
       localStorage.setItem("userAuth", JSON.stringify({ token, nick_name: nickname, email }));
     }
+
+
 
     function showGameMenu() {
       document.getElementById("registerDiv").classList.add("hidden");
