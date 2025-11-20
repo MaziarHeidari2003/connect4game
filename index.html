@@ -161,6 +161,7 @@ window.addEventListener("beforeunload", () => {
 
         const user = JSON.parse(localStorage.getItem("userAuth"));
         const playerId = user.id;
+        console.log(user)
 
         navigator.sendBeacon(
             `https://maziar-temp-project.ir/connect4/api/v1/game/leave-game?game_uuid=${currentGameUUID}&player_id=${playerId}`
@@ -232,7 +233,8 @@ async function returnToMainMenu() {
       token = data.access_token;
       nickname = data.nick_name;
       email = data.email;
-      localStorage.setItem("userAuth", JSON.stringify({ token, nick_name: nickname, email }));
+      id = data.id;
+      localStorage.setItem("userAuth", JSON.stringify({ token, id:id, nick_name: nickname, email }));
     }
 
     function showGameMenu() {
