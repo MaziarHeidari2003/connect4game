@@ -168,9 +168,7 @@ window.addEventListener("beforeunload", () => {
         );
     }
      
-    document.getElementById("gameArea").classList.add("hidden");
-    document.getElementById("reviewArea").classList.add("hidden");
-    document.getElementById("gameControls").classList.remove("hidden");
+   
 
   });
 
@@ -189,7 +187,10 @@ async function returnToMainMenu() {
             }
         );
     }
-}
+     document.getElementById("gameArea").classList.add("hidden");
+    document.getElementById("reviewArea").classList.add("hidden");
+    document.getElementById("gameControls").classList.remove("hidden");
+  }
 
     async function register() {
       const email = document.getElementById("regEmail").value.trim();
