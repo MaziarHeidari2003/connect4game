@@ -156,7 +156,19 @@
       }
     };
 
+
+    window.addEventListener("beforeunload", () => {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.close();
+    }
+});
+
+
     function returnToMainMenu() {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.close();
+    }
+    socket = null;
   document.getElementById("gameArea").classList.add("hidden");
   document.getElementById("reviewArea").classList.add("hidden");
   document.getElementById("gameControls").classList.remove("hidden");
@@ -264,7 +276,7 @@
       const game_uuid = document.getElementById("gameList").value;
       if (!game_uuid) return alert("Please select a game first");
 
-      const res = await fetch(`${BASE_URL}/game/join?game_uuid=${game_uuid}`, {
+      const res = await fetch(`https://maziar-temp-project.ir/connect4/api/v1/game/join?game_uuid=${game_uuid}`, {
         method: "PATCH",
         headers: { "Authorization": `Bearer ${token}` }
       });
