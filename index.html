@@ -118,6 +118,8 @@
     <h3>Game Board</h3>
     <button onclick="returnToMainMenu()">Return to Main Menu</button>
     <p id="statusText">Waiting for game state...</p>
+      <p id="endReason" style="color: red; font-weight: bold;"></p>
+
     <div id="board"></div>
   </div>
 
@@ -319,12 +321,20 @@ socket = new WebSocket(`wss://maziar-temp-project.ir/connect4/ws/api/v1/game/${c
   socket.onopen = () => console.log("✅ WebSocket connected");
 
   socket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    renderBoard(data.board, "board");
-    document.getElementById("statusText").textContent =
-      `Turn: ${data.current_turn} | Status: ${data.status}` +
-      (data.winner ? ` | Winner: ${data.winner}` : "");
-  };
+  const data = JSON.parse(event.data);
+
+  renderBoard(data.board, "board");
+
+  document.getElementById("statusText").textContent =
+    `Turn: ${data.current_turn} | Status: ${data.status}`;
+
+  if (data.winner) {
+    document.getElementById("statusText").textContent += ` | Winner: ${data.winner}`;
+  }
+
+  document.getElementById("endReason").textContent =
+    data.end_reason ? data.end_reason : "";
+};
 
   socket.onclose = () => {
     console.log("❌ WebSocket closed, retrying in 3s...");
