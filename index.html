@@ -162,7 +162,7 @@ window.addEventListener("beforeunload", () => {
 
         // Call leave-game endpoint
         navigator.sendBeacon(
-            `/api/v1/game/leave-game?game_uuid=${currentGameUUID}`
+            `https://maziar-temp-project.ir/connect4/api/v1/game/leave-game?game_uuid=${currentGameUUID}`
         );
     }
 });
@@ -172,7 +172,7 @@ async function returnToMainMenu() {
     if (socket && socket.readyState === WebSocket.OPEN) {
         socket.close();
 
-        await fetch(`/api/v1/game/leave-game?game_uuid=${currentGameUUID}`, {
+        await fetch(`https://maziar-temp-project.ir/connect4/api/v1/game/leave-game?game_uuid=${currentGameUUID}`, {
             method: "PATCH",
             credentials: "include",
         });
