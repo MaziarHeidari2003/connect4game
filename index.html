@@ -156,33 +156,41 @@
       }
     };
 
-
-    window.addEventListener("beforeunload", () => {
+window.addEventListener("beforeunload", () => {
     if (socket && socket.readyState === WebSocket.OPEN) {
         socket.close();
+
+        // Call leave-game endpoint
+        navigator.sendBeacon(
+            `/api/v1/game/leave-game?game_uuid=${currentGameUUID}`
+        );
     }
 });
 
 
-    function returnToMainMenu() {
+async function returnToMainMenu() {
     if (socket && socket.readyState === WebSocket.OPEN) {
         socket.close();
+
+        await fetch(`/api/v1/game/leave-game?game_uuid=${currentGameUUID}`, {
+            method: "PATCH",
+            credentials: "include",
+        });
     }
+
     socket = null;
-  document.getElementById("gameArea").classList.add("hidden");
-  document.getElementById("reviewArea").classList.add("hidden");
-  document.getElementById("gameControls").classList.remove("hidden");
+    document.getElementById("gameArea").classList.add("hidden");
+    document.getElementById("reviewArea").classList.add("hidden");
+    document.getElementById("gameControls").classList.remove("hidden");
 
-  // Optional: stop any auto-refreshing game updates
-  // if you used setInterval for updateBoard:
-  if (typeof gameInterval !== "undefined") {
-    clearInterval(gameInterval);
-  }
+    if (typeof gameInterval !== "undefined") {
+        clearInterval(gameInterval);
+    }
 
-  // Reset review/game state if needed
-  currentGameUUID = "";
-  reviewGameUUID = "";
+    currentGameUUID = "";
+    reviewGameUUID = "";
 }
+
 
 
     async function register() {
