@@ -255,7 +255,7 @@
       games.forEach(g => {
         const opt = document.createElement("option");
         opt.value = g.uuid;
-        opt.textContent = `${g.player_1_nick} (${g.status})`;
+        opt.textContent = `${g.creator_nick_name} (${g.status})`;
         list.appendChild(opt);
       });
     }
