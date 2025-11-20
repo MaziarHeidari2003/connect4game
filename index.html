@@ -167,7 +167,12 @@ window.addEventListener("beforeunload", () => {
             `https://maziar-temp-project.ir/connect4/api/v1/game/leave-game?game_uuid=${currentGameUUID}&player_id=${playerId}`
         );
     }
-});
+     
+    document.getElementById("gameArea").classList.add("hidden");
+    document.getElementById("reviewArea").classList.add("hidden");
+    document.getElementById("gameControls").classList.remove("hidden");
+
+  });
 
 
 async function returnToMainMenu() {
