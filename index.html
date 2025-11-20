@@ -374,7 +374,7 @@ if (!result.toLowerCase().includes("true")) {
       games.forEach(g => {
         const opt = document.createElement("option");
         opt.value = g.uuid;
-        opt.textContent = `${g.player_1_nick} vs ${g.player_2_nick}`;
+        opt.textContent = `${g.player_1_nick_name} vs ${g.player_2_nick_name}`;
         list.appendChild(opt);
       });
       document.getElementById("reviewBtn").classList.remove("hidden");
