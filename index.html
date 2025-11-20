@@ -118,7 +118,9 @@
     <h3>Game Board</h3>
     <button onclick="returnToMainMenu()">Return to Main Menu</button>
     <p id="statusText">Waiting for game state...</p>
-      <p id="endReason" style="color: red; font-weight: bold;"></p>
+<p style="font-weight: bold;">
+  End reason: <span id="endReason" style="color: red;"></span>
+</p>
 
     <div id="board"></div>
   </div>
@@ -331,9 +333,9 @@ socket = new WebSocket(`wss://maziar-temp-project.ir/connect4/ws/api/v1/game/${c
   if (data.winner) {
     document.getElementById("statusText").textContent += ` | Winner: ${data.winner}`;
   }
+const endReasonEl = document.getElementById("endReason");
+endReasonEl.textContent = data.end_reason ? data.end_reason : "";
 
-  document.getElementById("endReason").textContent =
-    data.end_reason ? data.end_reason : "";
 };
 
   socket.onclose = () => {
