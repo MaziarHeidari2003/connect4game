@@ -163,6 +163,8 @@ window.addEventListener("beforeunload", () => {
         // Call leave-game endpoint
         navigator.sendBeacon(
             `https://maziar-temp-project.ir/connect4/api/v1/game/leave-game?game_uuid=${currentGameUUID}`
+              method: "PATCH",
+    credentials: "include"
         );
     }
 });
