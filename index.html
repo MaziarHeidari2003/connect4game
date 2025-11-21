@@ -149,6 +149,7 @@
     // --- NEW ---
     let reviewGameUUID = "";
     let currentReviewStep = 0;
+    let manualClose = false;
 
     window.onload = () => {
       const saved = JSON.parse(localStorage.getItem("userAuth"));
@@ -159,26 +160,24 @@
         showGameMenu();
       }
     };
+
 window.addEventListener("beforeunload", () => {
     if (socket && socket.readyState === WebSocket.OPEN) {
+        manualClose = true;
         socket.close();
 
         const user = JSON.parse(localStorage.getItem("userAuth"));
         const playerId = user.id;
-        console.log(user)
 
         navigator.sendBeacon(
             `https://maziar-temp-project.ir/connect4/api/v1/game/leave-game?game_uuid=${currentGameUUID}&player_id=${playerId}`
         );
     }
-     
-   
-
-  });
-
+});
 
 async function returnToMainMenu() {
     if (socket && socket.readyState === WebSocket.OPEN) {
+        manualClose = true;
         socket.close();
 
         const user = JSON.parse(localStorage.getItem("userAuth"));
@@ -186,15 +185,16 @@ async function returnToMainMenu() {
 
         await fetch(
             `https://maziar-temp-project.ir/connect4/api/v1/game/leave-game?game_uuid=${currentGameUUID}&player_id=${playerId}`,
-            {
-                method: "POST"
-            }
+            { method: "POST" }
         );
     }
-     document.getElementById("gameArea").classList.add("hidden");
+
+    document.getElementById("gameArea").classList.add("hidden");
     document.getElementById("reviewArea").classList.add("hidden");
     document.getElementById("gameControls").classList.remove("hidden");
-  }
+}
+
+
 
     async function register() {
       const email = document.getElementById("regEmail").value.trim();
@@ -306,7 +306,7 @@ function startGame() {
 
   document.getElementById("endReasonRow").style.display = "none";
 document.getElementById("endReason").textContent = "";
-
+  
   connectWebSocket();
   updateBoard(); // Initial load
 }
@@ -352,10 +352,16 @@ if (data.end_reason) {
 
 };
 
-  socket.onclose = () => {
-    console.log("❌ WebSocket closed, retrying in 3s...");
+ socket.onclose = () => {
+  console.log("❌ WebSocket closed");
+
+  if (!manualClose) {
+    console.log("Retrying in 3s...");
     setTimeout(connectWebSocket, 3000);
-  };
+  }
+};
+
+
 }
 
 
