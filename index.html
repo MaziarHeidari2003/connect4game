@@ -202,6 +202,48 @@ window.addEventListener("beforeunload", () => {
     }
 });
 
+
+
+async function apiFetch(url, options = {}) {
+    const saved = JSON.parse(localStorage.getItem("userAuth"));
+
+    if (!options.headers) options.headers = {};
+    options.headers["Content-Type"] = "application/json";
+
+    if (saved?.token) {
+        options.headers["Authorization"] = "Bearer " + saved.token;
+    }
+
+    const res = await fetch(url, options);
+
+    // --- AUTO LOGOUT HANDLING ---
+    if (res.status === 401) {
+        console.warn("Token expired → Logging out...");
+        localStorage.removeItem("userAuth");
+
+        // Redirect UI to login screen
+        showLoginScreen();
+
+        return null;
+    }
+
+    return res;
+}
+
+
+function showLoginScreen() {
+    document.getElementById("gameControls").classList.add("hidden");
+    document.getElementById("gameArea").classList.add("hidden");
+    document.getElementById("reviewArea").classList.add("hidden");
+
+    document.getElementById("loginDiv").classList.remove("hidden");
+    document.getElementById("registerDiv").classList.remove("hidden");
+}
+
+
+
+
+
 async function returnToMainMenu() {
     if (socket && socket.readyState === WebSocket.OPEN) {
         manualClose = true;
@@ -210,7 +252,7 @@ async function returnToMainMenu() {
         const user = JSON.parse(localStorage.getItem("userAuth"));
         const playerId = user.id;
 
-        await fetch(
+        await apiFetch(
             `https://maziar-temp-project.ir/connect4/api/v1/game/leave-game?game_uuid=${currentGameUUID}&player_id=${playerId}`,
             { method: "POST" }
         );
@@ -282,7 +324,7 @@ async function returnToMainMenu() {
     }
 
     async function createGame() {
-      const res = await fetch(`${BASE_URL}/game/`, {
+      const res = await apiFetch(`${BASE_URL}/game/`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -295,7 +337,7 @@ async function returnToMainMenu() {
     }
 
     async function loadGames() {
-      const res = await fetch(`${BASE_URL}/game/`, {
+      const res = await apiFetch(`${BASE_URL}/game/`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (!res.ok) return alert("Failed to load games");
@@ -315,7 +357,7 @@ async function returnToMainMenu() {
       const game_uuid = document.getElementById("gameList").value;
       if (!game_uuid) return alert("Please select a game first");
 
-      const res = await fetch(`https://maziar-temp-project.ir/connect4/api/v1/game/join?game_uuid=${game_uuid}`, {
+      const res = await apiFetch(`https://maziar-temp-project.ir/connect4/api/v1/game/join?game_uuid=${game_uuid}`, {
         method: "PATCH",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -394,7 +436,7 @@ if (data.end_reason) {
 
     async function updateBoard() {
       if (!currentGameUUID) return;
-      const res = await fetch(`${BASE_URL}/game/current?game_uuid=${currentGameUUID}`, {
+      const res = await apiFetch(`${BASE_URL}/game/current?game_uuid=${currentGameUUID}`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (!res.ok) return;
@@ -427,7 +469,7 @@ if (data.end_reason) {
 
     async function makeMove(column) {
       if (!currentGameUUID) return;
-      const res = await fetch(`${BASE_URL}/game/make-move?game_uuid=${currentGameUUID}&chosen_column=${column}`, {
+      const res = await apiFetch(`${BASE_URL}/game/make-move?game_uuid=${currentGameUUID}&chosen_column=${column}`, {
         method: "PATCH",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -441,7 +483,7 @@ if (!result.toLowerCase().includes("true")) {
 
     // --- NEW --- Load finished games
     async function loadFinishedGames() {
-      const res = await fetch(`${BASE_URL}/game/?game_status=FINISHED`, {
+      const res = await apiFetch(`${BASE_URL}/game/?game_status=FINISHED`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (!res.ok) return alert("Failed to load finished games");
@@ -470,7 +512,7 @@ if (!result.toLowerCase().includes("true")) {
 
     async function connectToActiveGame() {
   try {
-    const res = await fetch(`${BASE_URL}/game/current_player_active_game`, {
+    const res = await apiFetch(`${BASE_URL}/game/current_player_active_game`, {
       headers: { "Authorization": `Bearer ${token}` }
     });
 
@@ -487,9 +529,9 @@ if (!result.toLowerCase().includes("true")) {
 
     currentGameUUID = activeGameUUID.replaceAll('"', '');
     alert("Connecting to your active game...");
-    startGame(); // will call connectWebSocket() and updateBoard()
+    startGame(); // will call connectWebSocket() and updateBoard()fetch
   } catch (err) {
-    console.error(err);
+    console.error(err);fetch
     alert("Error connecting to active game");
   }
 }
@@ -498,7 +540,7 @@ if (!result.toLowerCase().includes("true")) {
     async function loadGameStep(step = null) {
       let url = `${BASE_URL}/game/review_game?game_uuid=${reviewGameUUID}`;
       if (step) url += `&game_step=${step}`;
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (!res.ok) return alert("Failed to fetch step");
